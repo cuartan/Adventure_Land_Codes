@@ -1,9 +1,9 @@
-var mode = 0; //0 [default] is kite (move in straight line while attacking), 1 is standing still (will move if target is out of range), 2 is circle kite (walks in circles around enemy), 3 Moves to front of target before attacking
+var mode = 3; //0 [default] is kite (move in straight line while attacking), 1 is standing still (will move if target is out of range), 2 is circle kite (walks in circles around enemy), 3 Moves to front of target before attacking
 var targetting = 2; //Monster Range  = 0, Character Range = 1, Tank Range[default] = 2
 var min_xp_from_mob = 1000; //set to minimum xp you want to be getting from each kill -- lowest amount of xp a mob has to have to be attacked
-var max_att_from_mob = 100; //set to maximum damage you want to take from each hit -- most attack you're willing to fight
+var max_att_from_mob = 175; //set to maximum damage you want to take from each hit -- most attack you're willing to fight
 var min_xp_from_mob2 = 500; //set to minimum xp you want to be getting from each kill if can't find min from first target -- lowest amount of xp a mob has to have to be attacked
-var max_att_from_mob2 = 50; //set to maximum damage you want to take from each hit if can't find max from first target -- most attack you're willing to fight
+var max_att_from_mob2 = 175; //set to maximum damage you want to take from each hit if can't find max from first target -- most attack you're willing to fight
 //Settings
 
 var prevx = 0;
@@ -21,7 +21,7 @@ var stuck = 1;
 //JSONs
 
 
-var purchase_pots = false; //Set to true in order to allow potion purchases
+var purchase_pots = true; //Set to true in order to allow potion purchases
 var pots_minimum = 50; //If you have less than this, you will buy
 var pots_to_buy = 1000; //This is how many you will buy
 //Automatic Potion Purchasing!
@@ -55,18 +55,12 @@ setInterval(function() {
 
   var target = get_targeted_monster();
   if (!target) {
-    target = get_nearest_monster({
-      min_xp: min_xp_from_mob,
-      max_att: max_att_from_mob
-    });
+    target = GetTarget();
     if (target) {
       change_target(target);
       angle = Math.atan2(target.real_y - chary, target.real_x - charx);
     } else if (!target) {
-      target = get_nearest_monster({
-        min_xp: min_xp_from_mob2,
-        max_att: max_att_from_mob2
-      });
+      target = GetTarget()
       if (target) {
         change_target(target);
         angle = Math.atan2(target.real_y - chary, target.real_x - charx);
@@ -92,13 +86,13 @@ setInterval(function() {
   set_message("Attacking: " + target.mtype);
   //Attack
 
-/*  var parmem = get_nearest_solo_player();
-  if (parmem)
-    parent.socket.emit("party", {
-      event: 'invite',
-      id: parmem.id
-    });
-  //Invite to Party */
+  /*  var parmem = get_nearest_solo_player();
+    if (parmem)
+      parent.socket.emit("party", {
+        event: 'invite',
+        id: parmem.id
+      });
+    //Invite to Party */
 
   var distx = target.real_x - charx;
   var disty = target.real_y - chary;
@@ -182,6 +176,73 @@ function purchase_potions() {
   if (character.items[1].q < pots_minimum) {
     parent.buy("mpot0", pots_to_buy);
   }
+}
+
+function GetNearestMonster(args) {
+  //args:
+  // max_att - max attack
+  // min_xp - min XP
+  // m_type:
+  // target: Only return monsters that target this "name" or player object
+  // no_target: Only pick monsters that don't have any target
+  var min_d = 999999,
+    target = null;
+  if (!args) args = {};
+  if (args && args.target && args.target.name) args.target = args.target.name;
+  for (id in parent.entities) {
+    var current = parent.entities[id];
+    if (current.type != "monster" || args.min_xp && current.xp < args.min_xp || args.max_att && current.attack > args.max_att || current.dead) continue;
+    if (args.mtype && current.mtype != args.mtype) continue;
+    if (args.target && current.target != args.target) continue;
+    if (args.no_target && current.target && current.target != character.name) continue;
+    var c_dist = parent.distance(character, current);
+    if (c_dist < min_d) min_d = c_dist, target = current;
+  }
+  return target;
+}
+
+function GetTarget() {
+  //target=GetNearestMonster({min_xp:100,max_att:100});
+  var target;
+ /* if (!target) target = GetNearestMonster({
+    mtype: "mrpumpkin"
+  });
+  if (!target) target = GetNearestMonster({
+    mtype: "gscorpion"
+  }); */
+  if (!target) target = GetNearestMonster({
+    mtype: "phoenix"
+  });
+  if (!target) target = GetNearestMonster({
+    mtype: "dknight2"
+  });
+ /* if (!target) target = GetNearestMonster({
+    mtype: "osnake"
+  });
+  if (!target) target = GetNearestMonster({
+    mtype: "worm"
+  });
+  if (!target) target = GetNearestMonster({
+    mtype: "goo"
+  }); */
+  if (!target) target = GetNearestMonster({
+    mtype: "scorpion"
+  });
+ /* if (!target) target = GetNearestMonster({
+    mtype: "mvampire"
+  });
+  if (!target) target = GetNearestMonster({
+    mtype: "bat"
+  });
+  if (!target) target = GetNearestMonster({
+    mtype: "fvampire"
+  });
+  if (!target) target = GetNearestMonster({
+    mtype: "ghost"
+  });
+  //if (target && !(target.mtype == "goo" || target.mtype == "osnake" || target.mtype == "worm"))
+  //target=undefined; */
+  return target;
 }
 
 //Unusable:
